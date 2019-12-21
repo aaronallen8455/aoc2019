@@ -1,8 +1,10 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Day.Two
   ( dayTwoA
   , dayTwoB
   ) where
 
+import qualified Data.ByteString.Char8 as BS
 import           Data.Char (isNumber)
 import           Data.Function (on)
 import qualified Data.IntMap as M
@@ -10,14 +12,14 @@ import           Data.List (groupBy)
 import           Data.Maybe (catMaybes, fromMaybe)
 import           Text.Read (readMaybe)
 
-import           Day.Common (commaSep)
+import           Day.Common (commaSep, readInt)
 
-dayTwoA :: String -> String
-dayTwoA = fromMaybe "invalid program!" . fmap show . (M.lookup 0 =<<)
+dayTwoA :: BS.ByteString -> BS.ByteString
+dayTwoA = fromMaybe "invalid program!" . fmap (BS.pack . show) . (M.lookup 0 =<<)
         . runProgram 12 2 . M.fromList . zip [0..] . parseInput
 
-parseInput :: String -> [Int]
-parseInput = catMaybes . map readMaybe . commaSep
+parseInput :: BS.ByteString -> [Int]
+parseInput = catMaybes . map readInt . commaSep
 
 runProgram :: Int -> Int -> M.IntMap Int -> Maybe (M.IntMap Int)
 runProgram noun verb inp = go 0 initMap where
@@ -36,8 +38,8 @@ runProgram noun verb inp = go 0 initMap where
                         )
                     <*> Just m
 
-dayTwoB :: String -> String
-dayTwoB inp = show . head $
+dayTwoB :: BS.ByteString -> BS.ByteString
+dayTwoB inp = BS.pack . show . head $
   [ 100 * noun + verb
   | noun <- [0..99]
   , verb <- [noun..99]
