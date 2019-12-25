@@ -10,6 +10,10 @@ import           Day.Four (dayFourA)
 import           Day.Five (dayFiveA, dayFiveB)
 import           Day.Six (daySixA, daySixB)
 import           Day.Seven (daySevenA, daySevenB)
+import           Day.Eight (dayEightA, dayEightB)
+import           Day.Nine (dayNineA, dayNineB)
+import           Day.Ten (dayTenA, dayTenB)
+import           Day.Eleven (dayElevenA, dayElevenB)
 
 main :: IO ()
 main = do
@@ -28,4 +32,12 @@ main = do
     "6b" -> daySixB
     "7a" -> daySevenA
     "7b" -> daySevenB
+    "8a" -> dayEightA
+    "8b" -> dayEightB
+    "9a" -> dayNineA
+    "9b" -> dayNineB
+    "10a" -> dayTenA
+    "10b" -> dayTenB
+    "11a" -> dayElevenA
+    "11b" -> dayElevenB
     _ -> fail "day not found!"

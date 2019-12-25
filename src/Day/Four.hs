@@ -11,8 +11,6 @@ import           Data.Word (Word8)
 
 import           Day.Common (readInt)
 
-import           Debug.Trace
-
 dayFourA :: BS.ByteString -> BS.ByteString
 dayFourA inp = fromMaybe "bad input" $ do
   [rStart, rEnd] <- Just . (map . map) (subtract 48)
