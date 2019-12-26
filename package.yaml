@@ -22,10 +22,12 @@ description:         Please see the README on GitHub at <https://github.com/aaro
 dependencies:
 - array
 - base >= 4.7 && < 5
-- containers
 - bytestring
-- vector
+- comonad
+- containers
+- parsec
 - transformers
+- vector
 
 executables:
   aoc2019-exe:
