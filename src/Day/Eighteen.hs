@@ -22,72 +22,57 @@ import           Debug.Trace
 dayEighteenA :: BS8.ByteString -> BS8.ByteString
 dayEighteenA inp = fromMaybe "invalid input" $ do
   (maze, keys, start) <- parseMaze inp
-  let keyToKey = mempty -- M.fromList
---        [ ((k1, k2), (d, ks))
---        | x@(k1, c1) <- keys
---        , (k2, c2) <- dropWhile (<= x) keys
---        , Just (d, ks) <- [shortestWithKey maze c1 c2]
---        ]
+  let keyToKey = M.fromList
+        [ ((k1, k2), (d, ks))
+        | x@(k1, c1) <- keys
+        , (k2, c2) <- dropWhile (<= x) keys
+        , Just (d, ks) <- [shortestWithKey maze c1 c2]
+        ]
 
-  result <- evalState (collectKeys maze keyToKey (S.fromList keys) ('@', start) S.empty 0) (Ctx maxBound M.empty M.empty)
+  result <- evalState (collectKeys maze keyToKey (S.fromList keys) ('@', start) S.empty 0) (maxBound, M.empty)
   pure . BS8.pack $ show result
 
 -- could make this tail recursive and put the current min in state.
-collectKeys :: Maze -> KeyToKey -> S.Set KeyLoc -> (Char, (Int, Int)) -> S.Set Char -> Int -> State Ctx (Maybe Int)
-collectKeys _ _ k _ _ acc | S.null k = do
-  curMin <- gets ctxMin
-  if acc >= curMin
-     then pure Nothing
-     else traceShow acc $ Just acc <$ modify (\c -> c { ctxMin = min (ctxMin c) acc })
-collectKeys maze keyToKey keysToGo (curKey, pos) keysInv acc = do
-  curMin <- gets ctxMin
-  if acc >= curMin
-     then pure Nothing
-     else do
-       dp <- gets ctxDP
-       let keyList = S.toList keysInv
-       case M.lookup (curKey, keyList) dp of
-         Just mbR -> pure $ (+) <$> mbR <*> Just acc
-         Nothing -> do
-           r <- fmap getMin . mconcat <$> traverse collectKey (S.toList keysToGo)
-           dp' <- gets ctxDP
-           let dp'' = M.insert (curKey, keyList) (subtract acc <$> r) dp'
-           modify (\c -> c { ctxDP = dp'' })
-           pure r
+collectKeys :: Maze -> KeyToKey -> S.Set KeyLoc -> (Char, (Int, Int)) -> S.Set Char -> Int -> State (Int, Distance) (Maybe Int)
+collectKeys _ _ k _ _ acc | S.null k = traceShow acc $ Just acc <$ modify (first $ const acc)
+collectKeys maze keyToKey keysToGo (curKey, pos) keysInv acc =
+  fmap getMin . mconcat <$> traverse collectKey (S.toList keysToGo)
   where
-    collectKey :: KeyLoc -> State Ctx (Maybe (Min Int))
+    collectKey :: KeyLoc -> State (Int, Distance) (Maybe (Min Int))
     collectKey targetKey@(k, kc) = do
       let fstKey = min curKey k
           sndKey = max curKey k
-      mbDist <- --case M.lookup (fstKey, sndKey) keyToKey of
-                --     Just (dist, req)
-                --       | req `S.isSubsetOf` keysInv -> pure $ Just dist
-                      shortestDistance maze keysInv pos kc
-      dist <- gets ctxDistance
-      traceShow dist pure ()
+          invKeyList = S.toList keysInv
+      dp <- gets snd
+      mbD <- case M.lookup (fstKey, sndKey, invKeyList) dp of
+        Nothing -> do
+          let mbDist = case M.lookup (fstKey, sndKey) keyToKey of
+                         Just (dist, req)
+                           | req `S.isSubsetOf` keysInv -> Just dist
+                         _ -> shortestDistance maze keysInv pos kc
+          modify . second $ M.insert (fstKey, sndKey, invKeyList) mbDist
+          pure mbDist
+        Just x -> pure x
 
-      r <- for mbDist $ \d -> do
+      r <- for mbD $ \d -> do
+             curMin <- gets fst
              let acc' = acc + d
-             collectKeys maze keyToKey (S.delete targetKey keysToGo) targetKey (S.insert k keysInv) $! acc'
+             if acc' >= curMin
+                then pure Nothing
+                else do
+                  collectKeys maze keyToKey (S.delete targetKey keysToGo) targetKey (S.insert k keysInv) $! acc'
 
       pure $ Min <$> join r
 
 type KeyToKey = M.Map (Char, Char) (Int, S.Set Char)
 
-type Distance = M.Map ((Int, Int), (Int, Int), S.Set Char) (Maybe Int)
+type Distance = M.Map (Char, Char, String) (Maybe Int)
 
 type DP = M.Map (Char, String) (Maybe Int)
 
 type Maze = Array (Int, Int) Tile
 
 type KeyLoc = (Char, (Int, Int))
-
-data Ctx =
-  Ctx
-    { ctxMin :: Int
-    , ctxDP :: DP
-    , ctxDistance :: Distance
-    }
 
 parseMaze :: BS8.ByteString -> Maybe (Maze, [(Char, (Int, Int))], (Int, Int))
 parseMaze bs = do
@@ -123,19 +108,8 @@ parseTile c
   | otherwise = Nothing
 
 -- bidirectional BFS
-shortestDistance :: Maze -> S.Set Char -> (Int, Int) -> (Int, Int) -> State Ctx (Maybe Int)
-shortestDistance maze keys start end = do
-  dp <- gets ctxDistance
-  let fstC = min start end
-      sndC = max start end
-  case M.lookup (fstC, sndC, keys) dp of
-    Just x -> error "fuck you" -- pure x
-    Nothing -> do
-      let r = go [start] [end] M.empty M.empty 0
-          dp' = M.insert (fstC, sndC, keys) r dp
-      modify (\c -> c { ctxDistance = dp' })
-      pure r
-  where
+shortestDistance :: Maze -> S.Set Char -> (Int, Int) -> (Int, Int) -> Maybe Int
+shortestDistance maze keys start end = go [start] [end] M.empty M.empty 0 where
   go [] _ _ _ _ = Nothing
   go _ [] _ _ _ = Nothing
   go sq eq sv ev acc = (`runCont` id) . callCC $ \k -> do
