@@ -2,6 +2,7 @@
 module Day.Common
   ( commaSep
   , readInt
+  , chunks
   ) where
 
 import           Control.Monad (guard)
@@ -18,3 +19,8 @@ readInt x = do
   (i, r) <- BS.readInt x
   guard $ r == "" || r == "\n"
   pure i
+
+chunks :: Int -> BS.ByteString -> [BS.ByteString]
+chunks n bs = case BS.splitAt n bs of
+                (c, "") -> [c]
+                (c, r) -> c : chunks n r

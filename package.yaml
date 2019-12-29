@@ -26,6 +26,7 @@ dependencies:
 - comonad
 - containers
 - parsec
+- safe
 - transformers
 - vector
 

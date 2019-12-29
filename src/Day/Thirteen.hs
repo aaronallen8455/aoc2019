@@ -6,16 +6,16 @@ module Day.Thirteen
 
 import           Control.Arrow ((***), first)
 import           Control.Monad.Fix (mfix)
-import           Control.Monad.Trans.State.Lazy
+import           Control.Monad.Trans.State
 import           Data.Array
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.IntMap as IM
 import qualified Data.Map as M
-import           Data.Maybe (fromMaybe)
+import           Data.Maybe (catMaybes, fromMaybe)
 import           Data.Monoid (Last(..))
 import qualified Data.Set as S
 
-import           Day.IntCode (parseInput, runIntCodeProgram)
+import           Day.IntCode (parseInput, runIntCodeProgram', runIntCodeProgram)
 
 import           Debug.Trace
 
@@ -31,9 +31,9 @@ dayThirteenA inp = fromMaybe "invalid  program" $ do
 dayThirteenB :: BS8.ByteString -> BS8.ByteString
 dayThirteenB inp = fromMaybe "invalid program" $ do
   codes <- IM.insert 0 2 <$> parseInput inp
-  score <- snd . snd . (`runState` (S.empty, Nothing)) . mfix $ \mbOutput ->
-        flip runIntCodeProgram codes
-          <$> handleOutput (concat mbOutput)
+  let output = runIntCodeProgram' codes input
+      input = handleOutput output
+  score : _ <- Just $ reverse output
   pure . BS8.pack $ show score
 
 -- screen is 23 tall, 39 wide
@@ -61,29 +61,28 @@ data Tile
   | Ball
   deriving (Show, Eq)
 
-handleOutput :: [Int] -> State (S.Set (Int, Int), Maybe Int) [Int]
-handleOutput = trace "test" $ go Nothing Nothing where
-  go (Just bx) (Just px) xs = trace "1" $ (o :) <$> go Nothing Nothing xs where
-    o | bx == px = 0
-      | bx < px = -1
-      | bx > px = 1
-  go _ paddle (x : _ : 4 : xs) = trace "2" $ go (Just x) paddle xs
-  go ball _ (x : _ : 3 : xs) = trace "3" $ go ball (Just x) xs
-  go ball paddle (-1 : 0 : s : xs) = do
-    (blocks, _) <- get
-    put (blocks, Just s)
-    traceShow (S.size blocks) pure ()
+handleOutput :: [Int] -> [Int]
+handleOutput = go Nothing S.empty where
+  go :: Maybe Int -> S.Set (Int, Int) -> [Int] -> [Int]
+  go paddle blocks (x : _ : 4 : xs)
+    | Just px <- paddle =
+        let o | x == px = 0
+              | x < px = -1
+              | x > px = 1
+         in o : go Nothing blocks xs
+    | otherwise = 0 : go paddle blocks xs
+  go _ blocks (x : _ : 3 : xs)
+    | otherwise = go (Just x) blocks xs
+  go paddle blocks (-1 : 0 : score : xs) =
     if S.size blocks == 0
-       then pure $ repeat 0
-       else go ball paddle xs
-  go ball paddle (x : y : 2 : xs) = trace "4" $ do
-    modify $ first (S.insert (x, y))
-    go ball paddle xs
-  go ball paddle (x : y : 0 : xs) = trace "5" $ do
-    modify $ first (S.delete (x, y))
-    go ball paddle xs
-  go ball paddle (_ : _ : _ : xs) = trace "6" $ go ball paddle xs
-  go _ _ [] = trace "7" $ pure []
+       then []
+       else go paddle blocks xs
+  go paddle blocks (x : y : 2 : xs) = do
+    go paddle (S.insert (x, y) blocks) xs
+  go paddle blocks (x : y : 0 : xs) =
+    go paddle (S.delete (x, y) blocks) xs
+  go paddle blocks (_ : _ : _ : xs) = go paddle blocks xs
+  go _ _ [] = []
 
 parseBallOrPaddle :: Int -> Maybe Tile
 parseBallOrPaddle 4 = Just Ball

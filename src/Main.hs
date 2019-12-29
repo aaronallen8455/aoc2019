@@ -16,6 +16,11 @@ import           Day.Ten (dayTenA, dayTenB)
 import           Day.Eleven (dayElevenA, dayElevenB)
 import           Day.Twelve (dayTwelveA, dayTwelveB)
 import           Day.Thirteen (dayThirteenA, dayThirteenB)
+import           Day.Fourteen (dayFourteenA, dayFourteenB)
+import           Day.Fifteen (dayFifteenA, dayFifteenB)
+import           Day.Sixteen (daySixteenA, daySixteenB)
+import           Day.Seventeen (daySeventeenA, daySeventeenB)
+import           Day.Eighteen (dayEighteenA)
 
 main :: IO ()
 main = do
@@ -46,4 +51,13 @@ main = do
     "12b" -> dayTwelveB
     "13a" -> dayThirteenA
     "13b" -> dayThirteenB
+    "14a" -> dayFourteenA
+    "14b" -> dayFourteenB
+    "15a" -> dayFifteenA
+    "15b" -> dayFifteenB
+    "16a" -> daySixteenA
+    "16b" -> daySixteenB
+    "17a" -> daySeventeenA
+    "17b" -> daySeventeenB
+    "18a" -> dayEighteenA
     _ -> fail "day not found!"

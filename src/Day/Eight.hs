@@ -9,7 +9,7 @@ import qualified Data.ByteString.Char8 as BS8
 import           Data.Maybe (fromMaybe)
 import qualified Data.Vector as V
 
-import           Day.Common (readInt)
+import           Day.Common (readInt, chunks)
 
 dayEightA :: BS8.ByteString -> BS8.ByteString
 dayEightA inp = fromMaybe "invalid input" $ do
@@ -26,11 +26,6 @@ dayEightB inp = fromMaybe "invalid input" $ do
   let cs = foldr1 (\x -> BS8.pack . BS8.zipWith fillPixel x) $ chunks (6 * 25) inp'
       lns = chunks 25 cs
   pure $ BS8.unlines lns
-
-chunks :: Int -> BS8.ByteString -> [BS8.ByteString]
-chunks n bs = case BS8.splitAt n bs of
-                (c, "") -> [c]
-                (c, r) -> c : chunks n r
 
 layer :: [Int] -> V.Vector Int
 layer xs = V.accum (+) (V.replicate (length xs) 0) (zip xs $ repeat 1)
