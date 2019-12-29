@@ -66,6 +66,8 @@ collectKeys maze keyToKey keysToGo (curKey, pos) keysInv acc =
 
 type KeyToKey = M.Map (Char, Char) (Int, S.Set Char)
 
+type KeyToKeyDP = M.Map (Char, Char) [(Int, S.Set Char)]
+
 type Distance = M.Map (Char, Char, String) (Maybe Int)
 
 type DP = M.Map (Char, String) (Maybe Int)
@@ -88,7 +90,7 @@ parseMaze bs = do
   where
     getKey (coord, Key c) = Just (c, coord)
     getKey _ = Nothing
-    getStart (coord, Empty True) = Just coord
+    getStart (coord, Key '@') = Just coord
     getStart _ = Nothing
 
 data Tile
@@ -101,7 +103,7 @@ data Tile
 parseTile :: Char -> Maybe Tile
 parseTile '.' = Just $ Empty False
 parseTile '#' = Just Wall
-parseTile '@' = Just $ Empty True
+parseTile '@' = Just $ Key '@'
 parseTile c
   | isUpper c = Just $ Door c
   | isLower c = Just $ Key c
@@ -160,3 +162,6 @@ shortestWithKey maze start end = go [(start, S.empty)] [(end, S.empty)] M.empty 
     sq' <- S.toList . S.fromList . concat <$> traverse (search (fst <$> sv') ev') sq
     eq' <- S.toList . S.fromList . concat <$> traverse (search (fst <$> ev') sv') eq
     pure . go sq' eq' sv' ev' $! acc + 1
+
+findPaths :: Maze -> (Int, Int) -> (Int, Int) -> [(Int, S.Set Char)]
+findPaths maze start end =
