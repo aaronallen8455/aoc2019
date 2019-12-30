@@ -6,9 +6,13 @@ import           Control.Arrow ((&&&), first, second)
 import           Control.Monad (join)
 import           Control.Monad.Trans.Cont
 import           Control.Monad.Trans.State
+import           Control.Monad.Trans.Writer
 import           Data.Array
+import           Data.Bifunctor (bimap)
 import qualified Data.ByteString.Char8 as BS8
 import           Data.Char (isLower, isUpper, toLower)
+import qualified Data.DList as DL
+import           Data.Either (partitionEithers)
 import           Data.List (sort)
 import qualified Data.Map as M
 import           Data.Maybe (fromMaybe, mapMaybe)
@@ -22,15 +26,23 @@ import           Debug.Trace
 dayEighteenA :: BS8.ByteString -> BS8.ByteString
 dayEighteenA inp = fromMaybe "invalid input" $ do
   (maze, keys, start) <- parseMaze inp
-  let keyToKey = M.fromList
-        [ ((k1, k2), (d, ks))
-        | x@(k1, c1) <- keys
-        , (k2, c2) <- dropWhile (<= x) keys
-        , Just (d, ks) <- [shortestWithKey maze c1 c2]
-        ]
-
-  result <- evalState (collectKeys maze keyToKey (S.fromList keys) ('@', start) S.empty 0) (maxBound, M.empty)
-  pure . BS8.pack $ show result
+  let keyPaths = M.fromList
+                   [ ((k1, k2), p)
+                   | x@(k1, c1) <- keys
+                   , (k2, c2) <- dropWhile (<= x) keys
+                   , let p = findPaths maze c1 c2
+                   ]
+  traceShow keyPaths pure ()
+  pure "test"
+--  let keyToKey = M.fromList
+--        [ ((k1, k2), (d, ks))
+--        | x@(k1, c1) <- keys
+--        , (k2, c2) <- dropWhile (<= x) keys
+--        , Just (d, ks) <- [shortestWithKey maze c1 c2]
+--        ]
+--
+--  result <- evalState (collectKeys maze keyToKey (S.fromList keys) ('@', start) S.empty 0) (maxBound, M.empty)
+--  pure . BS8.pack $ show result
 
 -- could make this tail recursive and put the current min in state.
 collectKeys :: Maze -> KeyToKey -> S.Set KeyLoc -> (Char, (Int, Int)) -> S.Set Char -> Int -> State (Int, Distance) (Maybe Int)
@@ -164,4 +176,45 @@ shortestWithKey maze start end = go [(start, S.empty)] [(end, S.empty)] M.empty 
     pure . go sq' eq' sv' ev' $! acc + 1
 
 findPaths :: Maze -> (Int, Int) -> (Int, Int) -> [(Int, S.Set Char)]
-findPaths maze start end =
+findPaths maze start end = DL.toList $ go [(start, S.empty)] [(end, S.empty)] M.empty M.empty 0 where
+  go :: [((Int, Int), S.Set Char)]
+     -> [((Int, Int), S.Set Char)]
+     -> M.Map (Int, Int) [(Int, S.Set Char)]
+     -> M.Map (Int, Int) [(Int, S.Set Char)]
+     -> Int
+     -> DL.DList (Int, S.Set Char)
+  go [] _ _ _ _ = mempty
+  go _ [] _ _ _ = mempty
+  go sq eq sv ev acc =
+    let search :: M.Map (Int, Int) [(Int, S.Set Char)]
+               -> M.Map (Int, Int) [(Int, S.Set Char)]
+               -> ((Int, Int), S.Set Char)
+               -> ( Either [((Int, Int), S.Set Char)]
+                           [(Int, S.Set Char)]
+                  )
+        search visited dest (c@(x, y), keys) =
+          case M.lookup c dest of
+            Just ds
+              -> Right [ (acc + d, keys <> k) | (d, k) <- ds ]
+            _ -> Left
+                   [ (coord, keys <> key)
+                   | coord <- [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
+                   , case maze ! coord of
+                       Wall -> False
+                       _ -> True
+                   , let key = case maze ! coord of
+                                 Door c -> S.singleton c
+                                 _ -> S.empty
+                   ]
+        (sq', rs) = bimap concat concat . partitionEithers $ map (search sv ev) sq
+        eq' = concat . fst . partitionEithers $ map (search ev sv) eq
+        (sv', sq'') = foldr addToMap (sv, []) sq'
+        (ev', eq'') = foldr addToMap (ev, []) eq'
+        -- filters and adds to map
+        addToMap cur@(c, ks) (m, q)
+          | Just xs <- M.lookup c m =
+            if any (flip S.isSubsetOf ks . snd) xs
+               then (m, q)
+               else (M.insert c ((acc + 1, ks) : xs) m, cur : q)
+          | otherwise = (M.insert c [(acc + 1, ks)] m, cur : q)
+      in DL.fromList rs <> (go sq'' eq'' sv' ev' $! acc + 1)

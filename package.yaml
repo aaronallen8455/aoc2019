@@ -25,6 +25,7 @@ dependencies:
 - bytestring
 - comonad
 - containers
+- dlist
 - parsec
 - safe
 - transformers
