@@ -20,7 +20,7 @@ import           Day.Fourteen (dayFourteenA, dayFourteenB)
 import           Day.Fifteen (dayFifteenA, dayFifteenB)
 import           Day.Sixteen (daySixteenA, daySixteenB)
 import           Day.Seventeen (daySeventeenA, daySeventeenB)
-import           Day.Eighteen (dayEighteenA)
+import           Day.Eighteen (dayEighteenA, dayEighteenB)
 
 main :: IO ()
 main = do
@@ -60,4 +60,5 @@ main = do
     "17a" -> daySeventeenA
     "17b" -> daySeventeenB
     "18a" -> dayEighteenA
+    "18b" -> dayEighteenB
     _ -> fail "day not found!"
