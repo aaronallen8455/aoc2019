@@ -82,6 +82,7 @@ parseOp inp = op : params where
   (inp', op) = inp `divMod` 100
   params = unfoldr (Just . swap . (`divMod` 10)) inp'
 
+-- maximally lazy version
 runIntCodeProgram' :: M.IntMap Int -> [Int] -> [Int]
 runIntCodeProgram' prgm = go 0 0 prgm where
   go :: Int -> Int -> M.IntMap Int -> [Int] -> [Int]

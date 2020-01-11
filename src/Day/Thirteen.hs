@@ -17,15 +17,11 @@ import qualified Data.Set as S
 
 import           Day.IntCode (parseInput, runIntCodeProgram', runIntCodeProgram)
 
-import           Debug.Trace
-
 dayThirteenA :: BS8.ByteString -> BS8.ByteString
 dayThirteenA inp = fromMaybe "invalid  program" $ do
   codes <- parseInput inp
   output <- runIntCodeProgram [] codes
   (screen, _) <- buildScreen output
-  traceShow (filter ((== Ball) . snd) $ assocs screen) pure ()
-  traceShow (filter ((== Paddle) . snd) $ assocs screen) pure ()
   pure . BS8.pack . show . length . filter (== Block) $ elems screen
 
 dayThirteenB :: BS8.ByteString -> BS8.ByteString
