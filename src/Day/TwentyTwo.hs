@@ -12,81 +12,54 @@ import           Debug.Trace
 
 dayTwentyTwoA :: BS8.ByteString -> BS8.ByteString
 dayTwentyTwoA inp = fromMaybe "invalid input" $ do
-  shuffles <- traverse parseSh $ BS8.lines inp
-  let (r, _) = foldl' shuffle (2019, 10007) shuffles
+  shuffles <- traverse parseShuffle $ BS8.lines inp
+  let r = foldl' (shuffle 10007) 2019 shuffles
   pure . BS8.pack $ show r
 
 dayTwentyTwoB :: BS8.ByteString -> BS8.ByteString
 dayTwentyTwoB inp = fromMaybe "invalid input" $ do
-  shuffles <- fmap reverse . traverse parseSh $ BS8.lines inp
-  let (r, _) = foldl' revShuffle (2020, 119315717514047) shuffles
+  shuffles <- fmap reverse . traverse parseShuffle $ BS8.lines inp
+  let l = 119315717514047
+      t = 101741582076661
+      (coef, m) = foldl' (simplify l) (1, 0) shuffles
+      coef' = fastExp l coef t
+      m' = (sumOfPowers l coef (t - 1) * m) `mod` l
+      r = ((coef' * 2020 `mod` l) + m') `mod` l
   pure . BS8.pack $ show r
 
-parseShuffle :: BS8.ByteString -> Maybe (Int -> Int -> Int)
-parseShuffle bs
-  | Just n <- readInt =<< BS8.stripPrefix "cut " bs
-  = Just $ \l -> cut l n
-  | Just n <- readInt =<< BS8.stripPrefix "deal with increment " bs
-  = Just $ \l -> increment l n
-  | bs == "deal into new stack"
-  = Just newStack
-  | otherwise = Nothing
+-- v^0 + v^1 + v^3 .. v^n = (v^(n+1) - 1) / (v - 1)
+sumOfPowers :: Integer -> Integer -> Integer -> Integer
+sumOfPowers m v n =
+  ((fastExp m v (n + 1) - 1) `mod` m) * fastExp m (v - 1) (m - 2)
 
-parseShuffleRev :: BS8.ByteString -> Maybe (Int -> Int -> Int)
-parseShuffleRev bs
-  | Just n <- readInt =<< BS8.stripPrefix "cut " bs
-  = Just $ \l -> cutRev l n
-  | Just n <- readInt =<< BS8.stripPrefix "deal with increment " bs
-  = Just $ \l -> incrementRev l n
-  | bs == "deal into new stack"
-  = Just newStack
-  | otherwise = Nothing
-
-newStack :: Int -> Int -> Int
-newStack l i = l - 1 - i
-
-cut :: Int -> Int -> Int -> Int
-cut l n i | n < 0 = cut l (l + n) i
-cut l n i
-  | i >= n = i - n
-  | otherwise = l - (n - i)
-
-cutRev :: Int -> Int -> Int -> Int
-cutRev l n = cut l (negate n)
-
-increment :: Int -> Int -> Int -> Int
-increment l n i = n * i `mod` l
-
-incrementRev :: Int -> Int -> Int -> Int
-incrementRev l n i =
-  let (m, d) = l `divMod` n
-      (e, v) = i `divMod` n
-      go 0 = 0
-      go v | v >= n = 1 + go (v - n) -- too early?
-      go v = m + go (v + d)
-   in go v + e
+-- (m * coef + m) `mod` l
+-- its this:::  (newM + baseM * newCoef) `mod` l
+-- there must be a way to express it non-recursively
+-- (baseM * baseCoef + baseM * baseCoef^2 + baseM * baseCoef^3)
+-- baseM (baseCoef + baseCoef^2 + baseCoef^3 ..)
 
 data Shuffle
   = Deal
   | Cut Integer
   | Increment Integer
 
-parseSh :: BS8.ByteString -> Maybe Shuffle
-parseSh "deal into new stack" = Just Deal
-parseSh bs | Just n <- readInt =<< BS8.stripPrefix "cut " bs
-           = Just . Cut $ fromIntegral n
-           | Just n <- readInt =<< BS8.stripPrefix "deal with increment " bs
-           = Just . Increment $ fromIntegral n
+parseShuffle :: BS8.ByteString -> Maybe Shuffle
+parseShuffle "deal into new stack" = Just Deal
+parseShuffle bs
+  | Just n <- readInt =<< BS8.stripPrefix "cut " bs
+  = Just . Cut $ fromIntegral n
+  | Just n <- readInt =<< BS8.stripPrefix "deal with increment " bs
+  = Just . Increment $ fromIntegral n
 
-shuffle :: (Integer, Integer) -> Shuffle -> (Integer, Integer)
-shuffle (acc, l) Deal = ((l - 1 - acc) `mod` l, l)
-shuffle (acc, l) (Cut n) = ((acc - n) `mod` l, l)
-shuffle (acc, l) (Increment n) = (acc * n `mod` l, l)
+shuffle :: Integer -> Integer -> Shuffle -> Integer
+shuffle l acc Deal = (l - 1 - acc) `mod` l
+shuffle l acc (Cut n) = (acc - n) `mod` l
+shuffle l acc (Increment n) = acc * n `mod` l
 
-revShuffle :: (Integer, Integer) -> Shuffle -> (Integer, Integer)
-revShuffle (acc, l) Deal = ((l - 1 - acc) `mod` l, l)
-revShuffle (acc, l) (Cut n) = ((acc + n) `mod` l, l)
-revShuffle (acc, l) (Increment n) = (acc * fastExp l n (l-2) `mod` l, l)
+revShuffle :: Integer -> Integer -> Shuffle -> Integer
+revShuffle l acc Deal = (l - 1 - acc) `mod` l
+revShuffle l acc (Cut n) = (acc + n) `mod` l
+revShuffle l acc (Increment n) = acc * fastExp l n (l-2) `mod` l
 
 fastExp :: Integer -> Integer -> Integer -> Integer
 fastExp m x 0 = 1
@@ -94,6 +67,14 @@ fastExp m !x !e
   | even e = fastExp m (x^2 `mod` m) (e `div` 2)
   | odd e = x * fastExp m x (e - 1) `mod` m
 
+simplify :: Integer -> (Integer, Integer) -> Shuffle -> (Integer, Integer)
+simplify l (!coef, !m) s =
+  case s of
+    Deal -> (negate coef, (l - 1 - m) `mod` l) -- this is the problem
+    Cut n -> (coef, (m + n) `mod` l)
+    Increment n ->
+      let inv = fastExp l n (l - 2)
+       in (coef * inv `mod` l, m * inv `mod` l)
 
 -- to do increment backwards, can use fermats little theorem
 -- which states that a^(m-2)*a = 1.
