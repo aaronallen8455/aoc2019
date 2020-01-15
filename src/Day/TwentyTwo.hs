@@ -1,14 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE BangPatterns #-}
-module Day.TwentyTwo where
+module Day.TwentyTwo
+  ( dayTwentyTwoA
+  , dayTwentyTwoB
+  ) where
 
 import qualified Data.ByteString.Char8 as BS8
 import           Data.List (foldl')
 import           Data.Maybe (fromMaybe)
 
 import           Day.Common (readInt)
-
-import           Debug.Trace
 
 dayTwentyTwoA :: BS8.ByteString -> BS8.ByteString
 dayTwentyTwoA inp = fromMaybe "invalid input" $ do
@@ -27,17 +28,6 @@ dayTwentyTwoB inp = fromMaybe "invalid input" $ do
       r = ((coef' * 2020 `mod` l) + m') `mod` l
   pure . BS8.pack $ show r
 
--- v^0 + v^1 + v^3 .. v^n = (v^(n+1) - 1) / (v - 1)
-sumOfPowers :: Integer -> Integer -> Integer -> Integer
-sumOfPowers m v n =
-  ((fastExp m v (n + 1) - 1) `mod` m) * fastExp m (v - 1) (m - 2)
-
--- (m * coef + m) `mod` l
--- its this:::  (newM + baseM * newCoef) `mod` l
--- there must be a way to express it non-recursively
--- (baseM * baseCoef + baseM * baseCoef^2 + baseM * baseCoef^3)
--- baseM (baseCoef + baseCoef^2 + baseCoef^3 ..)
-
 data Shuffle
   = Deal
   | Cut Integer
@@ -50,6 +40,7 @@ parseShuffle bs
   = Just . Cut $ fromIntegral n
   | Just n <- readInt =<< BS8.stripPrefix "deal with increment " bs
   = Just . Increment $ fromIntegral n
+  | otherwise = Nothing
 
 shuffle :: Integer -> Integer -> Shuffle -> Integer
 shuffle l acc Deal = (l - 1 - acc) `mod` l
@@ -80,20 +71,7 @@ simplify l (!coef, !m) s =
 -- which states that a^(m-2)*a = 1.
 -- so we would have acc * m^(p-2) as long as p is a prime number
 
--- l `mod` n gives the delta from one cycle to the next
--- n `div` d is number of cycles with a + 1
---
--- when the point is reached where subtracting d will be a negative number,
--- the next cycle will start on n + negative d
---
--- so for 10007 n=64 (d=23), second cycle starts 41, third 18,
--- next would be -5 so we go to 64 - 5 = 59
-
---incrementRev :: Int -> Int -> Int -> Int
---incrementRev _ _ 0 = 0
---incrementRev l n i | i < 0 = incrementRev l n (i + n)
---incrementRev l n i = 1 + incrementRev l n (i - n)
-
--- is n always a factor of l - 1?
-
--- subtract n in modular space until the value n is reached
+-- v^0 + v^1 + v^3 .. v^n = (v^(n+1) - 1) / (v - 1)
+sumOfPowers :: Integer -> Integer -> Integer -> Integer
+sumOfPowers m v n =
+  ((fastExp m v (n + 1) - 1) `mod` m) * fastExp m (v - 1) (m - 2)
