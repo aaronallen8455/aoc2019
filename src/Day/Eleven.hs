@@ -4,16 +4,14 @@ module Day.Eleven
   , dayElevenB
   ) where
 
-import           Control.Monad (join)
 import           Control.Monad.Fix
-import           Control.Monad.Trans.Class (lift)
 import           Control.Monad.Trans.State
 import           Data.Array
 import qualified Data.ByteString.Char8 as BS8
 import           Data.Function (on)
 import           Data.List (groupBy)
 import qualified Data.Map as M
-import           Data.Maybe (fromMaybe, isJust)
+import           Data.Maybe (fromMaybe)
 import           Data.Tuple (swap)
 
 import           Day.IntCode (parseInput, runIntCodeProgram)
@@ -38,10 +36,10 @@ dayElevenB inp = fromMaybe "invalid program" $ do
       coords = map fst . filter snd $ M.toList m
       (colMin, colMax) = (fst (head coords), fst (last coords))
       (rowMin, rowMax) = let rows = snd <$> coords in (minimum rows, maximum rows)
-      array = toPaint <$> accumArray (||) False ((rowMin, colMin), (rowMax, colMax)) (map swap coords `zip` repeat True)
+      arr = toPaint <$> accumArray (||) False ((rowMin, colMin), (rowMax, colMax)) (map swap coords `zip` repeat True)
   pure . BS8.unlines . reverse $
     [ BS8.pack $ snd <$> row
-    | row <- groupBy ((==) `on` fst . fst) $ assocs array
+    | row <- groupBy ((==) `on` fst . fst) $ assocs arr
     ]
 
 toPaint :: Bool -> Char
@@ -59,7 +57,7 @@ handleOutput (a : b : xs) = do
       curPaint = fromMaybe False $ M.lookup coords' m
   put $ (m', dir', coords')
   (fromEnum curPaint :) <$> handleOutput xs
-handleOutput [] = pure []
+handleOutput _ = pure []
 
 data Direction
   = N
@@ -88,12 +86,3 @@ move E (x, y) = (x + 1, y)
 move S (x, y) = (x, y - 1)
 move W (x, y) = (x - 1, y)
 
-getPaint :: Int -> Maybe Bool
-getPaint 1 = Just True
-getPaint 0 = Just False
-getPaint _ = Nothing
-
-getTurn :: Int -> Maybe Turn
-getTurn 0 = Just L
-getTurn 1 = Just R
-getTurn _ = Nothing

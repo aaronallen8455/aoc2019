@@ -7,11 +7,8 @@ module Day.Seventeen
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.IntMap as IM
 import           Data.Maybe (catMaybes, fromMaybe)
-import qualified Data.Vector as V
 
 import           Day.IntCode (parseInput, runIntCodeProgram)
-
-import           Debug.Trace
 
 daySeventeenA :: BS8.ByteString -> BS8.ByteString
 daySeventeenA inp = fromMaybe "invalid program" $ do
@@ -89,4 +86,5 @@ parseTile i =
     62 -> Just . S $ B R
     94 -> Just . S $ B U
     118 -> Just . S $ B D
+    _ -> Nothing
 

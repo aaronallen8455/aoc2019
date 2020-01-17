@@ -5,12 +5,8 @@ module Day.Two
   ) where
 
 import qualified Data.ByteString.Char8 as BS
-import           Data.Char (isNumber)
-import           Data.Function (on)
 import qualified Data.IntMap as M
-import           Data.List (groupBy)
 import           Data.Maybe (catMaybes, fromMaybe)
-import           Text.Read (readMaybe)
 
 import           Day.Common (commaSep, readInt)
 

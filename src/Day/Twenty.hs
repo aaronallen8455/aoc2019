@@ -5,7 +5,6 @@ import           Control.Applicative ((<|>))
 import           Control.Arrow ((&&&))
 import           Control.Monad (foldM)
 import           Data.Array
-import           Data.Bifunctor (first)
 import           Data.Bitraversable (bitraverse)
 import qualified Data.ByteString.Char8 as BS8
 import           Data.Char (isAlpha)

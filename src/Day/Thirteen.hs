@@ -4,15 +4,11 @@ module Day.Thirteen
   , dayThirteenB
   ) where
 
-import           Control.Arrow ((***), first)
-import           Control.Monad.Fix (mfix)
-import           Control.Monad.Trans.State
+import           Control.Arrow ((***))
 import           Data.Array
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.IntMap as IM
-import qualified Data.Map as M
-import           Data.Maybe (catMaybes, fromMaybe)
-import           Data.Monoid (Last(..))
+import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 
 import           Day.IntCode (parseInput, runIntCodeProgram', runIntCodeProgram)
@@ -64,12 +60,12 @@ handleOutput = go Nothing S.empty where
     | Just px <- paddle =
         let o | x == px = 0
               | x < px = -1
-              | x > px = 1
+              | otherwise = 1
          in o : go Nothing blocks xs
     | otherwise = 0 : go paddle blocks xs
   go _ blocks (x : _ : 3 : xs)
     | otherwise = go (Just x) blocks xs
-  go paddle blocks (-1 : 0 : score : xs) =
+  go paddle blocks (-1 : 0 : _ : xs) =
     if S.size blocks == 0
        then []
        else go paddle blocks xs
@@ -78,12 +74,7 @@ handleOutput = go Nothing S.empty where
   go paddle blocks (x : y : 0 : xs) =
     go paddle (S.delete (x, y) blocks) xs
   go paddle blocks (_ : _ : _ : xs) = go paddle blocks xs
-  go _ _ [] = []
-
-parseBallOrPaddle :: Int -> Maybe Tile
-parseBallOrPaddle 4 = Just Ball
-parseBallOrPaddle 3 = Just Paddle
-parseBallOrPaddle _ = Nothing
+  go _ _ _ = []
 
 parseTile :: Int -> Maybe Tile
 parseTile i = case i of

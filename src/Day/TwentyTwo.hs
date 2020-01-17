@@ -47,16 +47,11 @@ shuffle l acc Deal = (l - 1 - acc) `mod` l
 shuffle l acc (Cut n) = (acc - n) `mod` l
 shuffle l acc (Increment n) = acc * n `mod` l
 
-revShuffle :: Integer -> Integer -> Shuffle -> Integer
-revShuffle l acc Deal = (l - 1 - acc) `mod` l
-revShuffle l acc (Cut n) = (acc + n) `mod` l
-revShuffle l acc (Increment n) = acc * fastExp l n (l-2) `mod` l
-
 fastExp :: Integer -> Integer -> Integer -> Integer
-fastExp m x 0 = 1
+fastExp _ _ 0 = 1
 fastExp m !x !e
-  | even e = fastExp m (x^2 `mod` m) (e `div` 2)
-  | odd e = x * fastExp m x (e - 1) `mod` m
+  | even e = fastExp m (x^(2 :: Int) `mod` m) (e `div` 2)
+  | otherwise = x * fastExp m x (e - 1) `mod` m
 
 simplify :: Integer -> (Integer, Integer) -> Shuffle -> (Integer, Integer)
 simplify l (!coef, !m) s =

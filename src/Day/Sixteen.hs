@@ -4,7 +4,6 @@ module Day.Sixteen
   , daySixteenB
   ) where
 
-import           Control.Comonad
 import qualified Data.ByteString.Char8 as BS8
 import           Data.Maybe (fromMaybe)
 import qualified Data.Vector as V
@@ -44,4 +43,3 @@ phaseDp :: V.Vector Word8 -> V.Vector Word8
 phaseDp prev = V.init phased where
   phased = V.scanr' go 0 prev
   go x acc = abs $ (x + acc + 10) `mod` 10
-  len = V.length prev

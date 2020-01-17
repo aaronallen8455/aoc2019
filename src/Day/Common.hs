@@ -7,8 +7,6 @@ module Day.Common
 
 import           Control.Monad (guard)
 import qualified Data.ByteString.Char8 as BS
-import           Data.Function (on)
-import           Data.List (groupBy)
 
 -- | Break comma seperated values
 commaSep :: BS.ByteString -> [BS.ByteString]

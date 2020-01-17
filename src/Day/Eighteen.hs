@@ -8,15 +8,12 @@ import           Control.Monad.Trans.State
 import           Data.Array
 import qualified Data.ByteString.Char8 as BS8
 import           Data.Char (isLower, isUpper, toLower)
-import qualified Data.DList as DL
 import           Data.List (sort, sortOn)
 import qualified Data.Map as M
 import           Data.Maybe (fromMaybe, mapMaybe)
 import           Data.Semigroup (Min(..))
 import qualified Data.Set as S
 import           Safe (lastMay)
-
-import           Debug.Trace
 
 dayEighteenA :: BS8.ByteString -> BS8.ByteString
 dayEighteenA inp = fromMaybe "invalid input" $ do
@@ -53,7 +50,7 @@ collectKeys :: M.Map Char [(Char, (Int, S.Set Char))]
             -> Char
             -> Int
             -> State (M.Map (Char, S.Set Char) (Maybe (Min Int))) (Maybe (Min Int))
-collectKeys m keysInv _ acc | M.size m == 1 = pure $ Just (Min acc)
+collectKeys m _ _ acc | M.size m == 1 = pure $ Just (Min acc)
 collectKeys m keysInv curKey acc = do
   mbDp <- gets (M.lookup (curKey, keysInv))
   case mbDp of
@@ -73,7 +70,7 @@ collectKeysPar :: M.Map Char [(Char, (Int, S.Set Char))]
                -> String
                -> Int
                -> State (M.Map (String, S.Set Char) (Maybe (Min Int))) (Maybe (Min Int))
-collectKeysPar m keysInv curKeys acc | M.size m == length curKeys = pure $ Just (Min acc)
+collectKeysPar m _ curKeys acc | M.size m == length curKeys = pure $ Just (Min acc)
 collectKeysPar m keysInv curKeys acc = do
   mbDp <- gets (M.lookup (curKeys, keysInv))
   case mbDp of
@@ -105,8 +102,6 @@ parseMaze bs = do
   where
     getKey (coord, Key c) = Just (c, coord)
     getKey _ = Nothing
-    getStart (coord, Key '@') = Just coord
-    getStart _ = Nothing
 
 data Tile
   = Empty Bool
@@ -140,12 +135,11 @@ findPaths maze start end = go [(start, S.empty)] [(end, S.empty)]
   go _ [] _ _ _ = Nothing
   go sq eq sv ev acc =
     let search :: M.Map (Int, Int) (Int, S.Set Char)
-               -> M.Map (Int, Int) (Int, S.Set Char)
                -> ((Int, Int), S.Set Char)
                -> ( Either (Int, S.Set Char)
                            [((Int, Int), S.Set Char)]
                   )
-        search visited dest (c@(x, y), keys) =
+        search dest (c@(x, y), keys) =
           case M.lookup c dest of
             Just (d, k)
               -> Left (acc + d, keys <> k)
@@ -156,13 +150,13 @@ findPaths maze start end = go [(start, S.empty)] [(end, S.empty)]
                        Wall -> False
                        _ -> True
                    , let key = case maze ! coord of
-                                 Door c -> S.singleton c
+                                 Door c' -> S.singleton c'
                                  _ -> S.empty
                    ]
-     in case concat <$> traverse (search sv ev) sq of
+     in case concat <$> traverse (search ev) sq of
           Left res -> Just res
           Right sq'
-            | Right eq' <- concat <$> traverse (search ev sv) eq
+            | Right eq' <- concat <$> traverse (search sv) eq
             ->
               let (sv', sq'') = foldr addToMap (sv, []) sq'
                   (ev', eq'') = foldr addToMap (ev, []) eq'

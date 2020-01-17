@@ -7,13 +7,10 @@ module Day.IntCode
   ) where
 
 import           Control.Applicative ((<|>))
-import           Data.Bifunctor (second)
 import qualified Data.ByteString.Char8 as BS
-import           Data.Char (isNumber)
-import           Data.Function (on)
 import qualified Data.IntMap as M
-import           Data.List (groupBy, unfoldr)
-import           Data.Maybe (catMaybes, fromMaybe)
+import           Data.List (unfoldr)
+import           Data.Maybe (fromMaybe)
 import           Data.Tuple (swap)
 
 import           Day.Common (commaSep, readInt)
@@ -22,7 +19,7 @@ parseInput :: BS.ByteString -> Maybe (M.IntMap Int)
 parseInput = fmap (M.fromList . zip [0..]) . traverse readInt . commaSep
 
 runIntCodeProgram :: [Int] -> M.IntMap Int -> Maybe [Int]
-runIntCodeProgram inp prgm = go inp 0 0 prgm where
+runIntCodeProgram input prgm = go input 0 0 prgm where
   go :: [Int] -> Int -> Int -> M.IntMap Int -> Maybe [Int]
   go inp base i m =
     case parseOp $ m M.! i of
@@ -45,6 +42,7 @@ runIntCodeProgram inp prgm = go inp 0 0 prgm where
                     <*> getParam p2 (i + 2)
                 )
             <*> Just m
+        doOp _ _ = Nothing
 
         case3 p ~(x:xs) =
           let m' = M.insert
@@ -53,10 +51,11 @@ runIntCodeProgram inp prgm = go inp 0 0 prgm where
                     <*> Just m
            in go xs base (i + 2) =<< m'
 
-        jump pred (p1 : p2 : _) =
-          case pred <$> getParam p1 (i + 1) of
+        jump predicate (p1 : p2 : _) =
+          case predicate <$> getParam p1 (i + 1) of
             Just True -> flip (go inp base) m =<< getParam p2 (i + 2)
             _ -> go inp base (i + 3) m
+        jump _ _ = Nothing
 
         ifStore cmp (p1 : p2 : p3 : _) =
           M.insert <$> insertParam p3 (i + 3)
@@ -65,6 +64,7 @@ runIntCodeProgram inp prgm = go inp 0 0 prgm where
           where
             v = fmap fromEnum $ cmp <$> getParam p1 (i + 1)
                                     <*> getParam p2 (i + 2)
+        ifStore _ _ = Nothing
 
         getParam 0 x = memLookup =<< memLookup x
         getParam 1 x = memLookup x
@@ -73,7 +73,7 @@ runIntCodeProgram inp prgm = go inp 0 0 prgm where
 
         insertParam 0 = memLookup
         insertParam 2 = fmap (+ base) . memLookup
-        insertparam _ = Nothing
+        insertParam _ = const Nothing
 
         memLookup x = M.lookup x m <|> Just 0
 
@@ -107,6 +107,7 @@ runIntCodeProgram' prgm = go 0 0 prgm where
                 (getParam p2 (i + 2))
             )
             m
+        doOp _ _ = m
 
         case3 p ~(x:xs) =
           let m' = M.insert
@@ -115,10 +116,11 @@ runIntCodeProgram' prgm = go 0 0 prgm where
                     m
            in go base (i + 2) m' xs
 
-        jump pred (p1 : p2 : _) =
-          case pred (getParam p1 (i + 1)) of
+        jump predicate (p1 : p2 : _) =
+          case predicate (getParam p1 (i + 1)) of
             True -> go base (getParam p2 (i + 2)) m inp
             _ -> go base (i + 3) m inp
+        jump _ _ = []
 
         ifStore cmp (p1 : p2 : p3 : _) =
           M.insert (insertParam p3 (i + 3))
@@ -127,6 +129,7 @@ runIntCodeProgram' prgm = go 0 0 prgm where
           where
             v = fromEnum $ cmp (getParam p1 (i + 1))
                                (getParam p2 (i + 2))
+        ifStore _ _ = m
 
         getParam 0 x = memLookup $ memLookup x
         getParam 1 x = memLookup x
@@ -135,7 +138,7 @@ runIntCodeProgram' prgm = go 0 0 prgm where
 
         insertParam 0 = memLookup
         insertParam 2 = (+ base) . memLookup
-        insertparam _ = error "bad param"
+        insertParam _ = error "bad param"
 
         memLookup x = fromMaybe 0 $ M.lookup x m
 
@@ -168,6 +171,7 @@ runIntCodeProgram'' prgm = go 0 0 prgm where
                 (getParam p2 (i + 2))
             )
             m
+        doOp _ _ = m
 
         case3 p = Input $ \x ->
           let m' = M.insert
@@ -176,10 +180,11 @@ runIntCodeProgram'' prgm = go 0 0 prgm where
                     m
            in go base (i + 2) m'
 
-        jump pred (p1 : p2 : _) =
-          case pred (getParam p1 (i + 1)) of
+        jump predicate (p1 : p2 : _) =
+          case predicate (getParam p1 (i + 1)) of
             True -> go base (getParam p2 (i + 2)) m
             _ -> go base (i + 3) m
+        jump _ _ = go base (i + 3) m
 
         ifStore cmp (p1 : p2 : p3 : _) =
           M.insert (insertParam p3 (i + 3))
@@ -188,6 +193,7 @@ runIntCodeProgram'' prgm = go 0 0 prgm where
           where
             v = fromEnum $ cmp (getParam p1 (i + 1))
                                (getParam p2 (i + 2))
+        ifStore _ _ = m
 
         getParam 0 x = memLookup $ memLookup x
         getParam 1 x = memLookup x
@@ -196,6 +202,6 @@ runIntCodeProgram'' prgm = go 0 0 prgm where
 
         insertParam 0 = memLookup
         insertParam 2 = (+ base) . memLookup
-        insertparam _ = error "bad param"
+        insertParam _ = error "bad param"
 
         memLookup x = fromMaybe 0 $ M.lookup x m

@@ -5,11 +5,8 @@ module Day.Five
   ) where
 
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.IntMap as M
 import           Data.Maybe (fromMaybe)
-import           Text.Read (readMaybe)
 
-import           Day.Common (commaSep, readInt)
 import           Day.IntCode (parseInput, runIntCodeProgram)
 
 dayFiveA :: BS.ByteString -> BS.ByteString

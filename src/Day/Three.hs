@@ -7,12 +7,9 @@ module Day.Three
 import           Control.Monad (guard)
 import qualified Data.ByteString.Char8 as BS
 import           Data.Bifunctor (bimap)
-import           Data.Function (on)
 import qualified Data.IntMap as M
-import           Data.List (foldl', groupBy)
-import           Data.Maybe (fromMaybe, catMaybes)
-import           Data.Tuple (swap)
-import           Text.Read (readMaybe)
+import           Data.List (foldl')
+import           Data.Maybe (fromMaybe)
 
 import           Day.Common (commaSep, readInt)
 

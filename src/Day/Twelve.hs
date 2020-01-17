@@ -11,12 +11,8 @@ import qualified Data.ByteString.Char8 as BS8
 import qualified Data.Map as M
 import           Data.Maybe (fromMaybe)
 import qualified Data.Vector as V
-import           Text.Parsec.ByteString (Parser)
-import           Text.Parsec
 
 import           Day.Common (readInt)
-
-import           Debug.Trace
 
 dayTwelveA :: BS8.ByteString -> BS8.ByteString
 dayTwelveA inp = fromMaybe "invalid input" $ do
@@ -68,7 +64,7 @@ step :: System (Vec, Vec) -> (Vec, Vec)
 step (System v i) = (newV, newP) where
   (oldV, oldP@(Vec px py pz)) = v V.! i
   newV = foldr go oldV [ snd $ v V.! d | d <- [ 0 .. V.length v - 1 ], d /= i ]
-  go (Vec x1 y1 z1) (Vec vx vy vz) = Vec (vx + dx) (vy + dy) (vz + dz)
+  go (Vec x1 y1 z1) (Vec x2 y2 z2) = Vec (x2 + dx) (y2 + dy) (z2 + dz)
     where
       dx = delta px x1
       dy = delta py y1
@@ -89,10 +85,10 @@ stepAxis (System v i) = (newV, newP) where
   (oldV, oldP) = v V.! i
   newV = foldr go oldV [ snd $ v V.! d | d <- [ 0 .. V.length v - 1 ], d /= i ]
   newP = oldP + newV
-  go p v
-    | p == oldP = v
-    | p > oldP = v + 1
-    | otherwise = v - 1
+  go p v'
+    | p == oldP = v'
+    | p > oldP = v' + 1
+    | otherwise = v' - 1
 
 -- find the offset and the length of the loop from a potentially infinite list
 -- of velocity, position.

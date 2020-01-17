@@ -6,11 +6,11 @@ module Day.Ten
   ) where
 
 import           Control.Monad (join)
-import           Data.Bifunctor (bimap, second)
+import           Data.Bifunctor (bimap)
 import qualified Data.ByteString.Char8 as BS8
 import           Data.Function (on)
 import qualified Data.Map.Lazy as M
-import           Data.List (sortBy, transpose)
+import           Data.List (transpose)
 import qualified Data.Set as S
 import qualified Data.Vector as V
 
@@ -34,7 +34,6 @@ dayTenA inp =
         , (k, v) <- [(a, slope), (b, join bimap negate slope)]
         ]
       visible = S.size <$> V.accum (<>) (V.replicate numA S.empty) pairs
-      maxIdx = V.maxIndexBy compare visible
     in BS8.pack . show $ V.maximum visible
 
 dayTenB :: BS8.ByteString -> BS8.ByteString
@@ -71,7 +70,9 @@ dayTenB inp =
         (_, (x, y) : _) -> BS8.pack . show $ (x + ox) * 100 + (oy - y)
         _ -> "invalid input"
 
+orient :: [(V, S.Set D)] -> [(V, S.Set D)]
 orient = go False where
+  go _ [] = []
   go False ((V (x, _), _) : xs)
     | x < 0 = go True xs
     | otherwise = go False xs

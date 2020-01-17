@@ -14,7 +14,6 @@ import           Data.Maybe (fromMaybe)
 import           Safe (minimumMay)
 import           Text.Parsec
 import           Text.Parsec.ByteString (Parser)
-import           Text.Parsec.Char
 import           Text.Read (readMaybe)
 
 dayFourteenA :: BS8.ByteString -> BS8.ByteString
@@ -30,7 +29,7 @@ dayFourteenB inp = fromMaybe "invalid input" $ do
   compMap <- either (const Nothing) (Just . mconcat)
            $ traverse (parse parseLine "") (BS8.lines inp)
 
-  result <- findMax compMap (10^12)
+  result <- findMax compMap (10^(12 :: Int))
 
   pure . BS8.pack $ show result
 
@@ -39,16 +38,16 @@ type Components = (Int, [(String, Int)])
 parseLine :: Parser (M.Map String [Components])
 parseLine = do
   inputs <- sepBy1 resPairP (string ", ")
-  string " => "
+  _ <- string " => "
   (outName, outCount) <- resPairP
   eof
   pure $ M.singleton outName [(outCount, inputs)]
   where
     resPairP = do
-      Just count <- readMaybe <$> many1 digit
-      char ' '
+      Just cnt <- readMaybe <$> many1 digit
+      _ <- char ' '
       name <- many1 letter
-      pure (name, count)
+      pure (name, cnt)
 
 -- the minimum amount of ore needed to produce a given amount of fuel and amounts
 -- of starter material
@@ -61,13 +60,13 @@ reduceToOre m exc key total = minimumMay $ do
           Just x | x > total -> (0, x - total)
                  | otherwise -> (total - x, 0)
 
-  (count, pieces) <- concat $ M.lookup key m
+  (cnt, pieces) <- concat $ M.lookup key m
 
-  let batches = case total' `divMod` count of
+  let batches = case total' `divMod` cnt of
                   (b, 0) -> b
                   (b, _) -> b + 1
 
-  let exc' = M.insert key (remExc + count * batches - total') exc
+  let exc' = M.insert key (remExc + cnt * batches - total') exc
   Just (subs, exc'') <-
     [ foldM (\(i, e) (a, b) -> first (+ i) <$> reduceToOre m e a (b * batches))
             (0, exc')
@@ -92,5 +91,5 @@ findMax m ore = go 10000 0 Nothing where
          | Just rbound <- mbRbound
            -> go ((fuel + rbound) `div` 2) fuel mbRbound
          | otherwise
-           -> go (fuel ^ 2) fuel Nothing
+           -> go (fuel ^ (2 :: Int)) fuel Nothing
       EQ -> Just fuel
