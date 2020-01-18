@@ -6,7 +6,7 @@ import           System.Environment (getArgs)
 import           Day.One (dayOneA, dayOneB)
 import           Day.Two (dayTwoA, dayTwoB)
 import           Day.Three (dayThreeA, dayThreeB)
-import           Day.Four (dayFourA)
+import           Day.Four (dayFourA, dayFourB)
 import           Day.Five (dayFiveA, dayFiveB)
 import           Day.Six (daySixA, daySixB)
 import           Day.Seven (daySevenA, daySevenB)
@@ -27,28 +27,30 @@ import           Day.TwentyOne (dayTwentyOneA, dayTwentyOneB)
 import           Day.TwentyTwo (dayTwentyTwoA, dayTwentyTwoB)
 import           Day.TwentyThree (dayTwentyThreeA, dayTwentyThreeB)
 import           Day.TwentyFour (dayTwentyFourA, dayTwentyFourB)
+import           Day.TwentyFive (dayTwentyFiveA)
 
 main :: IO ()
 main = do
   [day] <- getArgs
   BS8.interact $ case day of
-    "1a" -> dayOneA
-    "1b" -> dayOneB
-    "2a" -> dayTwoA
-    "2b" -> dayTwoB
-    "3a" -> dayThreeA
-    "3b" -> dayThreeB
-    "4a" -> dayFourA
-    "5a" -> dayFiveA
-    "5b" -> dayFiveB
-    "6a" -> daySixA
-    "6b" -> daySixB
-    "7a" -> daySevenA
-    "7b" -> daySevenB
-    "8a" -> dayEightA
-    "8b" -> dayEightB
-    "9a" -> dayNineA
-    "9b" -> dayNineB
+    "1a"  -> dayOneA
+    "1b"  -> dayOneB
+    "2a"  -> dayTwoA
+    "2b"  -> dayTwoB
+    "3a"  -> dayThreeA
+    "3b"  -> dayThreeB
+    "4a"  -> dayFourA
+    "4b"  -> dayFourB
+    "5a"  -> dayFiveA
+    "5b"  -> dayFiveB
+    "6a"  -> daySixA
+    "6b"  -> daySixB
+    "7a"  -> daySevenA
+    "7b"  -> daySevenB
+    "8a"  -> dayEightA
+    "8b"  -> dayEightB
+    "9a"  -> dayNineA
+    "9b"  -> dayNineB
     "10a" -> dayTenA
     "10b" -> dayTenB
     "11a" -> dayElevenA
@@ -79,5 +81,6 @@ main = do
     "23b" -> dayTwentyThreeB
     "24a" -> dayTwentyFourA
     "24b" -> dayTwentyFourB
-    _ -> fail "day not found!"
+    "25a" -> dayTwentyFiveA
+    _     -> fail "day not found!"
 

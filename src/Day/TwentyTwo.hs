@@ -56,7 +56,7 @@ fastExp m !x !e
 simplify :: Integer -> (Integer, Integer) -> Shuffle -> (Integer, Integer)
 simplify l (!coef, !m) s =
   case s of
-    Deal -> (negate coef, (l - 1 - m) `mod` l) -- this is the problem
+    Deal -> (negate coef, (l - 1 - m) `mod` l)
     Cut n -> (coef, (m + n) `mod` l)
     Increment n ->
       let inv = fastExp l n (l - 2)

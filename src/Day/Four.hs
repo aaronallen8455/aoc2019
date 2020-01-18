@@ -1,5 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Day.Four where
+module Day.Four
+  ( dayFourA
+  , dayFourB
+  ) where
 
 import           Control.Arrow
 import qualified Data.ByteString.Char8 as BS8
@@ -8,6 +11,8 @@ import           Data.List (group)
 import           Data.Maybe (fromMaybe)
 import qualified Data.Vector as V
 import           Data.Word (Word8)
+
+import           Day.Common (readInt)
 
 dayFourA :: BS.ByteString -> BS.ByteString
 dayFourA inp = fromMaybe "bad input" $ do
@@ -20,6 +25,13 @@ dayFourA inp = fromMaybe "bad input" $ do
              - combos 0 0 start False False len
              + 1
   pure . BS8.pack $ show result
+
+-- used brute force for part 2, should be possible with combinatorics
+dayFourB :: BS.ByteString -> BS.ByteString
+dayFourB inp = fromMaybe "bad input" $ do
+  [rStart, rEnd] <- readInt `traverse` BS8.splitWith (== '-') inp
+  let r = comp rStart rEnd
+  pure . BS8.pack $ show r
 
 -- Find the first valid combo from the bottom of the range
 firstNum :: [Word8] -> [Word8]
@@ -81,10 +93,10 @@ allValid a len =
 -- by 1. Meaning 2 places must be allocated exclusively to a single digit. But
 -- that digit needs to still occur oustide the pair <- no, increasing invariant.
 
-valid2 :: Word8 -> Int -> Int
-valid2 a len =
-  let nd = 9 - fromIntegral a
-   in sum [ nd `choose` x * (len-2) `choose` (x-1) * (x+1) | x <- [ 1 .. len - 2 ] ]
+--valid2 :: Word8 -> Int -> Int
+--valid2 a len =
+--  let nd = 9 - fromIntegral a
+--   in sum [ nd `choose` x * (len-2) `choose` (x-1) * (x+1) | x <- [ 1 .. len - 2 ] ]
   --perms (9 - fromIntegral a) (len - 2) * (9 - fromIntegral a)
 
 -- cheater!
