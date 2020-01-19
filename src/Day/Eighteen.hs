@@ -15,6 +15,8 @@ import           Data.Semigroup (Min(..))
 import qualified Data.Set as S
 import           Safe (lastMay)
 
+import           Day.Common (biDirectionalBFS)
+
 dayEighteenA :: BS8.ByteString -> BS8.ByteString
 dayEighteenA inp = fromMaybe "invalid input" $ do
   (maze, keys) <- parseMaze inp
@@ -120,49 +122,15 @@ parseTile c
   | otherwise = Nothing
 
 findPaths :: Maze -> (Int, Int) -> (Int, Int) -> Maybe (Int, S.Set Char)
-findPaths maze start end = go [(start, S.empty)] [(end, S.empty)]
-                              (M.singleton start (0, S.empty))
-                              (M.singleton end (0, S.empty))
-                              0
+findPaths maze start end = biDirectionalBFS go (start, S.empty) (end, S.empty)
   where
-  go :: [((Int, Int), S.Set Char)]
-     -> [((Int, Int), S.Set Char)]
-     -> M.Map (Int, Int) (Int, S.Set Char)
-     -> M.Map (Int, Int) (Int, S.Set Char)
-     -> Int
-     -> Maybe (Int, S.Set Char)
-  go [] _ _ _ _ = Nothing
-  go _ [] _ _ _ = Nothing
-  go sq eq sv ev acc =
-    let search :: M.Map (Int, Int) (Int, S.Set Char)
-               -> ((Int, Int), S.Set Char)
-               -> ( Either (Int, S.Set Char)
-                           [((Int, Int), S.Set Char)]
-                  )
-        search dest (c@(x, y), keys) =
-          case M.lookup c dest of
-            Just (d, k)
-              -> Left (acc + d, keys <> k)
-            _ -> Right
-                   [ (coord, keys <> key)
-                   | coord <- [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
-                   , case maze ! coord of
-                       Wall -> False
-                       _ -> True
-                   , let key = case maze ! coord of
-                                 Door c' -> S.singleton c'
-                                 _ -> S.empty
-                   ]
-     in case concat <$> traverse (search ev) sq of
-          Left res -> Just res
-          Right sq'
-            | Right eq' <- concat <$> traverse (search sv) eq
-            ->
-              let (sv', sq'') = foldr addToMap (sv, []) sq'
-                  (ev', eq'') = foldr addToMap (ev, []) eq'
-                  -- filters and adds to map
-                  addToMap cur@(c, ks) (m, q)
-                    | M.member c m = (m, q)
-                    | otherwise = (M.insert c (acc + 1, ks) m, cur : q)
-               in go sq'' eq'' sv' ev' $! acc + 1
-            | otherwise -> error "won't happen"
+    go (x, y) keys =
+      [ (coord, key <> keys )
+      | coord <- [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
+      , let cell = maze ! coord
+      , cell /= Wall
+      , let key = case cell of
+                    Door c -> S.singleton c
+                    _ -> S.empty
+      ]
+
